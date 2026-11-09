@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>FriendSpace</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div id="login-panel" class="login-wrapper">
+        <div class="login-card">
+            <div class="brand-logo"><i class='bx bxs-planet'></i> FriendSpace</div>
+
+            <div class="auth-toggle">
+                <button id="show-login" class="active" type="button">Đăng nhập</button>
+                <button id="show-register" type="button">Đăng ký</button>
+            </div>
+
+            <!-- Form Đăng nhập -->
+            <form id="login-form">
+                <div class="input-group"><i class='bx bx-user'></i><input id="login-username" required placeholder="Tên đăng nhập"></div>
+                <div class="input-group"><i class='bx bx-lock-alt'></i><input id="login-password" type="password" required placeholder="Mật khẩu"></div>
+                <button class="btn-primary w-100" type="submit">Đăng nhập</button>
+                <p id="login-error" class="error-msg"></p>
+            </form>
+
+            <!-- Form Đăng ký -->
+            <form id="register-form" class="hidden">
+                <div class="input-group"><i class='bx bx-id-card'></i><input id="reg-name" required placeholder="Tên hiển thị (VD: Trần Đức Anh)"></div>
+                <div class="input-group"><i class='bx bx-user'></i><input id="reg-username" required placeholder="Tên đăng nhập"></div>
+                <div class="input-group"><i class='bx bx-lock-alt'></i><input id="reg-password" type="password" required placeholder="Mật khẩu"></div>
+                <button class="btn-primary w-100" type="submit">Tạo tài khoản</button>
+                <p id="register-error" class="error-msg"></p>
+            </form>
+        </div>
+    </div>
+
+    <div id="dashboard" class="layout hidden">
+        <div id="toast" class="toast hidden"></div>
+
+        <!-- Cột 1: Menu Trái -->
+        <aside class="sidebar-left" id="sidebar">
+            <div class="search-container">
+                <input type="text" id="searchInput" placeholder="Tìm kiếm bạn bè..." autocomplete="off">
+                <div id="searchResults" class="search-results hidden"></div>
+            </div>
+            <div class="sidebar-header">
+                <div class="brand-logo"><i class='bx bxs-planet'></i> <span class="nav-text">FriendSpace</span></div>
+                <button class="btn-icon" id="toggle-sidebar" title="Thu gọn/Mở rộng"><i class='bx bx-menu'></i></button>
+            </div>
+
+            <nav class="nav-menu">
+                <button data-view="home" class="active"><i class='bx bx-home-circle'></i> <span class="nav-text">Bảng tin</span></button>
+                <button data-view="friends"><i class='bx bx-group'></i> <span class="nav-text">Bạn bè</span></button>
+                <button data-view="requests"><i class='bx bx-bell'></i> <span class="nav-text">Lời mời</span> <span id="req-badge" class="badge hidden">0</span></button>
+                <button data-view="profile"><i class='bx bx-user-circle'></i> <span class="nav-text">Hồ sơ</span></button>
+            </nav>
+            <div class="profile-widget" data-view="profile" style="cursor:pointer">
+                <img id="nav-avatar" class="avatar" src="https://ui-avatars.com/api/?name=U" alt="avt">
+                <div class="user-info"><b id="side-name">...</b><small>@myprofile</small></div>
+                <button id="logout-btn" title="Đăng xuất"><i class='bx bx-log-out'></i></button>
+            </div>
+        </aside>
+
+        <!-- Cột 2: Nội dung chính (Giữa) -->
+        <main class="main-content">
+            <header class="topbar">
+                <h2 id="page-title">Bảng tin</h2>
+                <button id="refresh-btn" class="btn-icon"><i class='bx bx-refresh'></i></button>
+            </header>
+
+            <div class="view-container">
+                <!-- BẢNG TIN -->
+                <div id="view-home" class="view">
+                    <div class="card create-post">
+                        <form id="post-form">
+                            <div class="post-input-wrapper">
+                                <img id="composer-avatar" class="avatar" src="https://ui-avatars.com/api/?name=U" alt="avt">
+                                <textarea id="post-content" placeholder="Chuyện gì đang xảy ra?"></textarea>
+                            </div>
+                            <img id="post-preview-img" class="img-preview hidden">
+                            <div class="post-actions">
+                                <div class="tools">
+                                    <label class="btn-icon text-primary" title="Thêm ảnh"><i class='bx bx-image'></i><input type="file" id="post-image" accept="image/*" hidden></label>
+                                    <!-- Sửa lại nút này để bypass lỗi kiểm tra mã của Visual Studio -->
+                                    <!-- Thay đoạn onclick cũ thành id="emoji-btn" -->
+                                    <button type="button" class="btn-icon text-warning" id="emoji-btn" title="Thêm Emoji"><i class='bx bx-smile'></i></button>
+                                </div>
+                                <button type="submit" id="btn-post" class="btn-primary rounded">Đăng</button>
+                            </div>
+                        </form>
+                    </div>
+                    <div id="feed-list" class="feed-container"></div>
+                </div>
+
+                <!-- BẠN BÈ & LỜI MỜI -->
+                <div id="view-friends" class="view hidden"><div id="friends-list" class="grid-people"></div></div>
+                <div id="view-requests" class="view hidden"><div id="requests-list" class="grid-people"></div></div>
+
+                <!-- HỒ SƠ CÁ NHÂN -->
+                <div id="view-profile" class="view hidden">
+                    <div class="profile-header-card">
+                        <div class="cover-photo"></div>
+                        <div class="profile-main-info">
+                            <div class="profile-avatar-wrapper">
+                                <img id="prof-display-avatar" class="avatar huge" src="https://ui-avatars.com/api/?name=U">
+                            </div>
+                            <div class="profile-text">
+                                <h2 id="prof-display-name">Tên</h2>
+                                <p id="prof-display-bio" class="text-muted">Tiểu sử</p>
+                            </div>
+                        </div>
+
+                        <!-- TAB NAVIGATION (Đã cập nhật đủ Follower/Following) -->
+                        <div class="profile-tabs">
+                            <button class="tab-btn active" data-tab="posts">Bài viết</button>
+                            <button class="tab-btn" data-tab="following">Đang theo dõi</button>
+                            <button class="tab-btn" data-tab="followers">Người theo dõi</button>
+                            <button class="tab-btn" data-tab="edit">Sửa thông tin</button>
+                        </div>
+                    </div>
+
+                    <!-- TAB NỘI DUNG -->
+                    <div id="profile-tab-posts" class="tab-content">
+                        <div id="my-posts-list"></div>
+                    </div>
+
+                    <div id="profile-tab-following" class="tab-content hidden card">
+                        <div id="following-list" class="grid-people"></div>
+                    </div>
+
+                    <div id="profile-tab-followers" class="tab-content hidden card">
+                        <div id="followers-list" class="grid-people"></div>
+                    </div>
+
+                    <div id="profile-tab-edit" class="tab-content hidden card">
+                        <form id="profile-form">
+                            <div class="form-group">
+                                <label>Ảnh đại diện (Tùy chọn)</label>
+                                <input type="file" id="prof-avatar-file" accept="image/*">
+                            </div>
+                            <div class="form-group"><label>Tên hiển thị</label><input id="prof-name" required></div>
+                            <div class="form-group"><label>Tiểu sử</label><textarea id="prof-bio" rows="3"></textarea></div>
+                            <button class="btn-primary" type="submit">Lưu thông tin</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Cột 3: Widget Gợi ý (Phải) -->
+        <aside class="sidebar-right" id="sidebar-right">
+            <div class="sidebar-right-toggle">
+                <button class="btn-icon" id="toggle-sidebar-right" title="Mở rộng/Thu gọn Gợi ý"><i class='bx bx-menu-alt-right'></i></button>
+            </div>
+            <div class="widget" id="right-widget">
+                <div class="widget-header">
+                    <h3>Gợi ý cho bạn</h3>
+                    <select id="hops-select" class="small-select"><option value="2">2 Hops</option><option value="3">3 Hops</option></select>
+                </div>
+                <div id="recommendations-list" class="widget-list"></div>
+            </div>
+        </aside>
+    </div>
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>
